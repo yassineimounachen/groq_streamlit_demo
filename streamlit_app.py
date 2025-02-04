@@ -2,8 +2,7 @@ import streamlit as st
 from typing import Generator
 from groq import Groq
 
-st.set_page_config(page_icon="💬", layout="wide",
-                   page_title="Groq Goes Brrrrrrrr...")
+st.set_page_config(page_icon="💬", layout="wide", page_title="Groq Goes Brrrrrrrr...")
 
 
 def icon(emoji: str):
@@ -16,7 +15,7 @@ def icon(emoji: str):
 
 icon("🏎️")
 
-st.subheader("Groq Chat Streamlit App", divider="rainbow", anchor=False)
+st.subheader("Groq x Streamlit", divider="rainbow", anchor=False)
 
 client = Groq(
     api_key=st.secrets["GROQ_API_KEY"],
@@ -31,12 +30,16 @@ if "selected_model" not in st.session_state:
 
 # Define model details
 models = {
-    "gemma2-9b-it": {"name": "Gemma2-9b-it", "tokens": 8192, "developer": "Google"},
-    "llama-3.3-70b-versatile": {"name": "LLaMA3.3-70b-versatile", "tokens": 128000, "developer": "Meta"},
-    "llama-3.1-8b-instant" : {"name": "LLaMA3.1-8b-instant", "tokens": 128000, "developer": "Meta"},
-    "llama3-70b-8192": {"name": "LLaMA3-70b-8192", "tokens": 8192, "developer": "Meta"},
-    "llama3-8b-8192": {"name": "LLaMA3-8b-8192", "tokens": 8192, "developer": "Meta"},
-    "mixtral-8x7b-32768": {"name": "Mixtral-8x7b-Instruct-v0.1", "tokens": 32768, "developer": "Mistral"},
+    "llama-3.3-70b-versatile": {
+        "name": "llama-3.3-70b-versatile",
+        "tokens": 32768,
+        "developer": "Meta",
+    },
+    "mixtral-8x7b-32768": {
+        "name": "mixtral-8x7b-32768",
+        "tokens": 32768,
+        "developer": "Mistral",
+    },
 }
 
 # Layout for model selection and max_tokens slider
@@ -47,7 +50,7 @@ with col1:
         "Choose a model:",
         options=list(models.keys()),
         format_func=lambda x: models[x]["name"],
-        index=4  # Default to mixtral
+        index=0,  # Default to the first model in the list
     )
 
 # Detect model change and clear chat history if model has changed
@@ -66,12 +69,12 @@ with col2:
         # Default value or max allowed if less
         value=min(32768, max_tokens_range),
         step=512,
-        help=f"Adjust the maximum number of tokens (words) for the model's response. Max for selected model: {max_tokens_range}"
+        help=f"Adjust the maximum number of tokens (words) for the model's response. Max for selected model: {max_tokens_range}",
     )
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
-    avatar = '🤖' if message["role"] == "assistant" else '👨‍💻'
+    avatar = "🤖" if message["role"] == "assistant" else "👨‍💻"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
@@ -86,7 +89,7 @@ def generate_chat_responses(chat_completion) -> Generator[str, None, None]:
 if prompt := st.chat_input("Enter your prompt here..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    with st.chat_message("user", avatar='👨‍💻'):
+    with st.chat_message("user", avatar="👨‍💻"):
         st.markdown(prompt)
 
     # Fetch response from Groq API
@@ -94,14 +97,11 @@ if prompt := st.chat_input("Enter your prompt here..."):
         chat_completion = client.chat.completions.create(
             model=model_option,
             messages=[
-                {
-                    "role": m["role"],
-                    "content": m["content"]
-                }
+                {"role": m["role"], "content": m["content"]}
                 for m in st.session_state.messages
             ],
             max_tokens=max_tokens,
-            stream=True
+            stream=True,
         )
 
         # Use the generator function with st.write_stream
@@ -114,9 +114,11 @@ if prompt := st.chat_input("Enter your prompt here..."):
     # Append the full response to session_state.messages
     if isinstance(full_response, str):
         st.session_state.messages.append(
-            {"role": "assistant", "content": full_response})
+            {"role": "assistant", "content": full_response}
+        )
     else:
         # Handle the case where full_response is not a string
         combined_response = "\n".join(str(item) for item in full_response)
         st.session_state.messages.append(
-            {"role": "assistant", "content": combined_response})
+            {"role": "assistant", "content": combined_response}
+        )
